@@ -1,5 +1,8 @@
 # Source: https://github.com/github/gitignore/blob/main/Node.gitignore
 
+#Environment variables
+.env
+
 # Logs
 logs
 *.log
