@@ -2,6 +2,7 @@ let store = {
     user: { name: "Student" },
     apod: '',
     rovers: ['Curiosity', 'Opportunity', 'Spirit'],
+    roverManifestData: '',
 }
 
 // add our markup to the page
@@ -19,7 +20,7 @@ const render = async (root, state) => {
 
 // create content
 const App = (state) => {
-    let { rovers, apod } = state
+    let { rovers, apod, roverManifestData } = state
 
     return `
         <header></header>
@@ -37,6 +38,11 @@ const App = (state) => {
                     but generally help with discoverability of relevant imagery.
                 </p>
                 ${ImageOfTheDay(apod)}
+            </section>
+            <section>
+                <p>
+                    Placeholder text for rover manifest data.
+                </p>
             </section>
         </main>
         <footer></footer>
@@ -72,8 +78,10 @@ const ImageOfTheDay = (apod) => {
     console.log(photodate.getDate(), today.getDate());
 
     console.log(photodate.getDate() === today.getDate());
+
     if (!apod || apod.date === today.getDate() ) {
         getImageOfTheDay(store)
+        return
     }
 
     // check if the photo of the day is actually type video!
@@ -91,6 +99,8 @@ const ImageOfTheDay = (apod) => {
     }
 }
 
+// @todo Method to render rover manifest data
+
 // ------------------------------------------------------  API CALLS
 
 // Example API call
@@ -101,5 +111,16 @@ const getImageOfTheDay = (state) => {
         .then(res => res.json())
         .then(apod => updateStore(store, { apod }))
 
-    return data
+    return apod
+}
+
+// API call for rover manifest data
+const getRoverManifest = (state) => {
+    let {roverManifestData} = state
+
+    fetch(`http://localhost:3000/rovers`)
+        .then(res => res.json())
+        .then(roverManifestData => updateStore(store, {roverManifestData}))
+
+    return roverManifestData
 }
