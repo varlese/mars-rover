@@ -3,6 +3,7 @@ let store = {
     apod: '',
     rovers: ['Curiosity', 'Opportunity', 'Spirit'],
     roverManifestData: '',
+    roverPhotos: '',
 }
 
 // add our markup to the page
@@ -20,7 +21,7 @@ const render = async (root, state) => {
 
 // create content
 const App = (state) => {
-    let { rovers, apod, roverManifestData } = state
+    let { rovers, apod, roverManifestData, roverPhotos } = state
 
     return `
         <header></header>
@@ -40,9 +41,10 @@ const App = (state) => {
                 ${ImageOfTheDay(apod)}
             </section>
             <section>
-                <p>
-                    Placeholder text for rover manifest data.
-                </p>
+                ${roverManifest(roverManifestData)}
+            </section>
+            <section>
+                ${renderPhotos(roverPhotos)}
             </section>
         </main>
         <footer></footer>
@@ -99,7 +101,28 @@ const ImageOfTheDay = (apod) => {
     }
 }
 
-// @todo Method to render rover manifest data
+// Method to render rover manifest data
+const roverManifest = (roverManifestData) => {
+    if (!roverManifestData) {
+        getRoverManifest(store)
+        return
+    }
+
+    return (`
+        <p>This is the ${roverManifestData.name}. It was launched on ${roverManifestData.launch_date} and landed on Mars on
+        ${roverManifestData.landing_date}. It's current status is ${roverManifestData.status}.</p>
+    `)
+}
+
+// Method to render rover photos
+const renderPhotos = (roverPhotos) => {
+    if (!roverPhotos) {
+        getRoverPhotos(store)
+        return
+    }
+
+    return(`<pre>` + JSON.stringify(roverPhotos, null, 2) + `</pre>`)
+}
 
 // ------------------------------------------------------  API CALLS
 
@@ -123,4 +146,15 @@ const getRoverManifest = (state) => {
         .then(roverManifestData => updateStore(store, {roverManifestData}))
 
     return roverManifestData
+}
+
+// API call to get photos per rover
+const getRoverPhotos = (state) => {
+    let {roverPhotos} = state
+
+    fetch(`http://localhost:3000/mars-photos`)
+        .then(res => res.json)
+        .then(roverPhotos => updateStore(store, {roverPhotos}))
+
+    return roverPhotos
 }
