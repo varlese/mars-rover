@@ -121,7 +121,11 @@ const renderPhotos = (roverPhotos) => {
         return
     }
 
-    return(`<pre>` + JSON.stringify(roverPhotos, null, 2) + `</pre>`)
+    return roverPhotos.map( photo => {
+        return(`
+            <img src=${photo} width="200px"/>
+        `)
+    });
 }
 
 // ------------------------------------------------------  API CALLS
@@ -151,9 +155,10 @@ const getRoverManifest = (state) => {
 // API call to get photos per rover
 const getRoverPhotos = (state) => {
     let {roverPhotos} = state
+    const today = dayjs( '2020-10-12' ).format( 'YYYY-MM-DD' );
 
-    fetch(`http://localhost:3000/mars-photos`)
-        .then(res => res.json)
+    fetch(`http://localhost:3000/mars-photos/${today}`)
+        .then(res => res.json())
         .then(roverPhotos => updateStore(store, {roverPhotos}))
 
     return roverPhotos

@@ -48,9 +48,11 @@ app.get('/rovers', async(req,res) => {
 })
 
 //Get Mars rover photos
-app.get('/mars-photos', async(req,res) => {
+app.get('/mars-photos/:filterDate', async(req,res) => {
+    const filterDate = dayjs( req.params.filterDate ).format( 'YYYY-M-D' );
+
     try {
-        let roverPhotos = await fetch(`https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos?earth_date=2015-6-3&api_key=${process.env.API_KEY}`)
+        let roverPhotos = await fetch(`https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos?earth_date=${filterDate}&api_key=${process.env.API_KEY}`)
             .then(res => res.json())
 
             .then(res => {
