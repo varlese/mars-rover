@@ -16,12 +16,18 @@ app.use(bodyParser.json())
 app.use('/', express.static(path.join(__dirname, '../public')))
 
 // your API calls
-//@todo move rover name into variable on API
 
 //Get Mars rover manifest data
-app.get('/rovers', async(req,res) => {
+app.get('/rovers/:roverName', async(req,res, next) => {
+    const roverName = req.params.roverName
+
+    if( !roverName ) {
+        res.status(404)
+        res.render('error', { error: 'Rover not found' })
+    }
+
     try {
-        let roverData = await fetch(`https://api.nasa.gov/mars-photos/api/v1/manifests/Curiosity/?api_key=${process.env.API_KEY}`)
+        let roverData = await fetch(`https://api.nasa.gov/mars-photos/api/v1/manifests/${roverName}/?api_key=${process.env.API_KEY}`)
             .then(res => res.json())
 
             .then(res => {
@@ -29,15 +35,19 @@ app.get('/rovers', async(req,res) => {
                 return res
             })
 
-            .then(res => res.photo_manifest)
-
             .then(res => {
+                if(res.errors){
+                    return res.errors
+                }
+
+                const rover = res.photo_manifest
+
                 return {
-                    name: res.name,
-                    landing_date: dayjs(res.landing_date).format('MMMM D, YYYY'),
-                    launch_date: dayjs(res.launch_date).format('MMMM D, YYYY'),
-                    status: res.status,
-                    max_date: res.max_date,
+                    name: rover.name,
+                    landing_date: dayjs(rover.landing_date).format('MMMM D, YYYY'),
+                    launch_date: dayjs(rover.launch_date).format('MMMM D, YYYY'),
+                    status: rover.status,
+                    max_date: rover.max_date,
                 }
             })
 
