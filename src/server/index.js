@@ -17,8 +17,12 @@ app.use('/', express.static(path.join(__dirname, '../public')))
 
 // your API calls
 
+app.get('favicon.ico', async(req, res) => {
+    return ''
+})
+
 //Get Mars rover manifest data
-app.get('/rovers/:roverName', async(req,res, next) => {
+app.get('/rovers/:roverName', async(req, res, next) => {
     const roverName = req.params.roverName
 
     if( !roverName ) {
@@ -58,11 +62,13 @@ app.get('/rovers/:roverName', async(req,res, next) => {
 })
 
 //Get Mars rover photos
-app.get('/mars-photos/:filterDate', async(req,res) => {
+app.get('/mars-photos/:roverName/:filterDate', async(req,res) => {
+    const roverName = req.params.roverName
+
     const filterDate = dayjs( req.params.filterDate ).format( 'YYYY-M-D' );
 
     try {
-        let roverPhotos = await fetch(`https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos?earth_date=${filterDate}&api_key=${process.env.API_KEY}`)
+        let roverPhotos = await fetch(`https://api.nasa.gov/mars-photos/api/v1/rovers/${roverName}/photos?earth_date=${filterDate}&api_key=${process.env.API_KEY}`)
             .then(res => res.json())
 
             .then(res => {
@@ -73,32 +79,19 @@ app.get('/mars-photos/:filterDate', async(req,res) => {
             .then(res => res.photos)
 
             .then(res => {
+                if(!res.length){
+                    return {error: 'Whoops, no pictures today!'}
+                }
+
                 const roverPhotos = List(res)
+
                 return roverPhotos.map((photo, key) => {
-                    console.log(key)
                     return photo.img_src
                 })
             })
 
             res.send(roverPhotos)
     } catch(err) {
-        console.log('error:', err);
-    }
-})
-
-// example API response/log
-// app.get('/ping', async(req,res) => {
-//     console.log('pong')
-//     res.send('pong')
-// })
-
-// example API call
-app.get('/apod', async (req, res) => {
-    try {
-        let image = await fetch(`https://api.nasa.gov/planetary/apod?api_key=${process.env.API_KEY}`)
-            .then(res => res.json())
-        res.send({ image })
-    } catch (err) {
         console.log('error:', err);
     }
 })

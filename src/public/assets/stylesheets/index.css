@@ -20,11 +20,14 @@ footer {
   /* footer styles */
 }
 
-nav {
+a {
+  font-weight: 900;
+}
+
+li {
   display: inline;
   margin: 10px;
   border: #000 1px solid;
-
 }
 
 /* -------------------  TABLET  --------------------- */

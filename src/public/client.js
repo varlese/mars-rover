@@ -3,8 +3,9 @@ let store = {
     apod: '',
     rovers: ['Curiosity', 'Opportunity', 'Spirit'],
     roverManifestData: '',
-    roverPhotos: '',
+    roverPhotos: null,
     roverName: null,
+    date: dayjs('2020-10-12').format('YYYY-MM-DD'),
 }
 
 store.roverName = store.rovers[0]
@@ -23,13 +24,17 @@ const render = async (root, state) => {
 
 // create content
 const App = (state) => {
-    let { rovers, roverManifestData, roverPhotos, roverName } = state
+    let { rovers, roverManifestData, roverPhotos, roverName, date } = state
+
+    const inputDate = dayjs(date).format('YYYY-MM-DD')
 
     return `
         <header></header>
         <main>
             ${Greeting(store.user.name)}
             <section>
+                <input type="date" id="date" value="${inputDate}" />
+                <button id="change-date">Update</button>
                 <nav>
                     <ul>
                     ${navigation()}
@@ -40,7 +45,7 @@ const App = (state) => {
                 ${roverManifest(roverManifestData, roverName)}
             </section>
             <section>
-                ${renderPhotos(roverPhotos)}
+                ${renderPhotos(roverPhotos, roverName)}
             </section>
         </main>
         <footer></footer>
@@ -61,9 +66,22 @@ window.addEventListener('click', (event) => {
 
     const roverName = event.target.hash.replace(/^#+/,"");
 
-    updateStore(store, {roverName:roverName, roverManifestData: null})
+    const date = document.getElementById('date').value
+
+    updateStore(store, {roverName:roverName, roverManifestData: null, roverPhotos: null, date: date})
 })
 
+window.addEventListener('click', (event) => {
+    if(event.target != document.getElementById('change-date')){
+        return
+    }
+
+    event.preventDefault()
+
+    const date = document.getElementById('date').value
+
+    updateStore(store, {roverPhotos: null, date: date})
+})
 
 // ------------------------------------------------------  COMPONENTS
 
@@ -80,7 +98,7 @@ const Greeting = (name) => {
     `
 }
 
-// Function to dynamically add tabs to DOM
+// Method to dynamically add tabs to DOM
 const navigation = () => {
     let {rovers} = store
 
@@ -93,7 +111,7 @@ const navigation = () => {
 const roverManifest = (roverManifestData, roverName) => {
     if (!roverManifestData) {
         getRoverManifest(store, roverName)
-        return
+        return 'Loading...'
     }
 
     return (`
@@ -103,10 +121,14 @@ const roverManifest = (roverManifestData, roverName) => {
 }
 
 // Method to render rover photos
-const renderPhotos = (roverPhotos) => {
-    if (!roverPhotos) {
-        getRoverPhotos(store)
-        return
+const renderPhotos = (roverPhotos, roverName) => {
+    if(roverPhotos && 'undefined' !== typeof roverPhotos.error){
+        return `<p>${roverPhotos.error}</p>`
+    }
+
+    if(!roverPhotos) {
+        getRoverPhotos(store, roverName)
+        return 'Loading...'
     }
 
     return roverPhotos.map( photo => {
@@ -130,11 +152,12 @@ const getRoverManifest = (state, roverName) => {
 }
 
 // API call to get photos per rover
-const getRoverPhotos = (state) => {
-    let {roverPhotos} = state
-    const today = dayjs( '2020-10-12' ).format( 'YYYY-MM-DD' );
+const getRoverPhotos = (state, roverName) => {
+    let {roverPhotos, date} = state
 
-    fetch(`http://localhost:3000/mars-photos/${today}`)
+    const url = `http://localhost:3000/mars-photos/${roverName}/${date}`
+
+    fetch(url)
         .then(res => res.json())
         .then(roverPhotos => updateStore(store, {roverPhotos}))
 
