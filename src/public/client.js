@@ -105,20 +105,11 @@ const roverManifest = (roverManifestData, roverName) => {
     if (!roverManifestData) {
         getRoverManifest(store, roverName)
         return (`
-            <div class="lds-spinner">
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-            </div>
+        <div class="spinner">
+            <div class="bounce1"></div>
+            <div class="bounce2"></div>
+            <div class="bounce3"></div>
+        </div>
         `)
     }
 
@@ -129,6 +120,7 @@ const roverManifest = (roverManifestData, roverName) => {
 }
 
 // Method to render rover photos
+// @todo fix photo rendering so empty string isn't returned first
 const renderPhotos = (roverPhotos, roverName, pages, page, perPage) => {
     if(roverPhotos && 'undefined' !== typeof roverPhotos.error){
         return `<p>${roverPhotos.error}</p>`
@@ -137,19 +129,10 @@ const renderPhotos = (roverPhotos, roverName, pages, page, perPage) => {
     if(!roverPhotos) {
         getRoverPhotos(store, roverName)
         return (`
-            <div class="lds-spinner">
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
+            <div class="spinner">
+                <div class="bounce1"></div>
+                <div class="bounce2"></div>
+                <div class="bounce3"></div>
             </div>
         `)
     }
@@ -158,82 +141,70 @@ const renderPhotos = (roverPhotos, roverName, pages, page, perPage) => {
 
     const imageHTML = roverPhotos.map((photo, index) => {
         console.log(index, offset, (offset + perPage))
-        if((offset + perPage) >= index){
+        if((offset + perPage) <= index || index < offset){
+            console.log(index)
             return ''
         }
-
         return `<img src="${photo}" />`
     }).join('')
-
-    const paginationHTML = ''
 
     return (`
     <div class="gallery">
         <main id="image-gallery" class="images">
         ${imageHTML}
         </main>
-        <footer id="gallery-pagination">
-            <button id="btnPrevious">&larr; <span class="sr-only">Previous</span></button>
-            <div>
-                <div id="gallery-dots">
-                    ${renderDots(pages, page)}
-                </div>
-                <span id="page"></span>
-            </div>
-            <button id="btnNext"><span class="sr-only">Next </span>&rarr;</button>
-        </footer>
+        ${renderNavigation(pages, page)}
     </div>
     `)
 }
 
-const renderDots = (pages, page) => {
+// Set up gallery pagination/navigation
+const renderDot = (page, currentPage, buttonClass) => {
+    const dotLabel = page + 1
+    let dotClasses = [buttonClass]
+
+    if(currentPage === page){
+        dotClasses.push('active')
+    }
+
+    dotClasses = dotClasses.join(' ')
+
+    const dotHTML = (`
+    <button class="${dotClasses}" data-index=${page}>
+        <span class="sr-only">
+            ${dotLabel}
+        </span>
+    </button>
+    `)
+
+    return dotHTML
+}
+
+const renderNavigation = (pages, page) => {
     let dots = []
     for (var i = 0; i < pages; i++){
-        const dotLabel = i + 1
-        let dotClasses = ['gallery-dot']
-
-        if(i === page){
-            dotClasses.push('active')
-        }
-
-        dotClasses = dotClasses.join(' ')
-
-        const dotHTML = (`
-            <button class="${dotClasses}" data-index=${i}>
-                <span class="sr-only">
-                    ${dotLabel}
-                </span>
-            </button>
-        `)
-        dots.push(dotHTML)
+        dots.push(renderDot(i, page, 'gallery-dot'))
     }
 
-    return dots.join('')
+    const dotsHTML = dots.join('')
+
+    return (`
+        <footer id="gallery-pagination">
+            <button class="btnPrevious">&larr; <span class="sr-only">Previous</span></button>
+            <div>
+                <div id="gallery-dots">
+                    ${dotsHTML}
+                </div>
+                <span id="page"></span>
+            </div>
+            <button class="btnNext"><span class="sr-only">Next </span>&rarr;</button>
+        </footer>
+    `)
 }
 
-// Set up image gallery
-const gallerySetUp = () => {
-    var previous = document.getElementById('btnPrevious')
-    var next = document.getElementById('btnNext')
-    const gallery = document.getElementById('image-gallery')
-    var pageIndicator = document.getElementById('page')
-    var galleryDots = document.getElementById('gallery-dots')
-    let { pages } = store
-
-    var images= [];
-    for (var i = 0; i < 36; i++) {
-        images.push({
-            title: "Image " + (i + 1),
-            source: `${renderPhotos(roverPhotos, roverName)}`
-        });
-    }
-
-    pages = Math.ceil(images.length / perPage)
-}
-
-//
+// Add event listeners for navigation
 window.addEventListener('click', (event) => {
-    if( !event.target.classList.contains('gallery-dot') ){
+    if(!event.target.classList.contains('gallery-dot')){
         return
     }
 
@@ -242,41 +213,67 @@ window.addEventListener('click', (event) => {
     updateStore(store, {page})
 })
 
-// Previous Button
-window.addEventListener('click', () => {
-    return
-
-    let { roverPhotos, roverName } = store
-
-    if (page === 1) {
-        page = 1;
-    } else {
-        page--;
-        showImages(roverPhotos, roverName);
+window.addEventListener('keydown', (event) => {
+    if(event.code !== 'ArrowLeft' && event.code !== 'ArrowRight'){
+        return
     }
+
+    let {page, pages} = store
+
+    let nextPage
+
+    if(event.code === 'ArrowLeft'){
+        nextPage = page - 1
+    } else if(event.code === 'ArrowRight'){
+        nextPage = page + 1
+    }
+
+    page = nextPage
+
+    if(page < 0 || page >= pages){
+        return
+    }
+
+    updateStore(store, {page})
+})
+
+// Previous Button
+window.addEventListener('click', (event) => {
+    if(!event.target.classList.contains('btnPrevious')){
+        return
+    }
+
+    let {page} = store
+
+    let previousPage = page - 1
+
+    page = previousPage
+
+    if(page < 0){
+        return
+    }
+
+    updateStore(store, {page})
 })
 
 // Next Button
-window.addEventListener('click', () => {
-    return
-
-    let { roverPhotos, roverName } = store
-
-    if (page < pages) {
-        page++;
-        showImages(roverPhotos, roverName);
+window.addEventListener('click', (event) => {
+    if(!event.target.classList.contains('btnNext')){
+        return
     }
+
+    let {page} = store
+
+    let nextPage = page + 1
+
+    page = nextPage
+
+    if(page >= pages){
+        return
+    }
+
+    updateStore(store, {page})
 })
-
-// Jump to page
-function goToPage(index) {
-    let { roverPhotos, roverName } = store
-
-    index = parseInt(index);
-    page =  index + 1;
-
-    showImages(roverPhotos, roverName);
-}
 
 // Load images
 function showImages(roverPhotos, roverName) {
