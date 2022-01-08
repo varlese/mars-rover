@@ -1,33 +1,53 @@
-let store = {
-    user: { name: "Student" },
-    apod: '',
-    rovers: ['Curiosity', 'Opportunity', 'Spirit'],
-    roverManifestData: '',
-    roverPhotos: null,
-    roverName: null,
-    date: dayjs('2020-10-12').format('YYYY-MM-DD'),
-    perPage: 8,
-    page: 0,
-    pages: null,
-}
+let {setState, getState, getStateAsMap} = (() => {
+    let store = Immutable.Map({
+        user: { name: "Student" },
+        apod: '',
+        rovers: ['Curiosity', 'Opportunity', 'Spirit'],
+        roverManifestData: '',
+        roverPhotos: null,
+        roverName: null,
+        date: dayjs('2020-10-12').format('YYYY-MM-DD'),
+        perPage: 8,
+        page: 0,
+        pages: null,
+    })
 
-store.roverName = store.rovers[0]
+    const getStateAsMap = () => {
+        return store
+    }
+
+    const getState = () => {
+        return getStateAsMap().toObject()
+    }
+
+    const setState = (newState) => {
+        store = store.merge(newState)
+    }
+
+    setState({roverName: getState().rovers[0]})
+
+    return {
+        setState: setState,
+        getState: getState,
+        getStateAsMap: getStateAsMap,
+    }
+})()
 
 // add our markup to the page
 const root = document.getElementById('root')
 
-const updateStore = (store, newState) => {
-    store = Object.assign(store, newState)
-    render(root, store)
+const updateStore = (newState) => {
+    setState(newState)
+    render(root, getState())
 }
 
-const render = async (root, state) => {
-    root.innerHTML = App(state)
+const render = async (root) => {
+    root.innerHTML = App()
 }
 
 // create content
-const App = (state) => {
-    let { rovers, roverManifestData, roverPhotos, roverName, date, pages, page, perPage } = state
+const App = () => {
+    let { rovers, roverManifestData, roverPhotos, roverName, date, pages, page, perPage } = getState()
 
     const inputDate = dayjs(date).format('YYYY-MM-DD')
 
@@ -60,7 +80,7 @@ const App = (state) => {
 
 // listening for load event because page should load before any JS is called
 window.addEventListener('load', () => {
-    render(root, store)
+    render(root)
 })
 
 window.addEventListener('click', (event) => {
@@ -74,7 +94,7 @@ window.addEventListener('click', (event) => {
 
     const date = document.getElementById('date').value
 
-    updateStore(store, {roverName:roverName, roverManifestData: null, roverPhotos: null, date: date})
+    updateStore({roverName:roverName, roverManifestData: null, roverPhotos: null, date: date})
 })
 
 window.addEventListener('click', (event) => {
@@ -86,14 +106,14 @@ window.addEventListener('click', (event) => {
 
     const date = document.getElementById('date').value
 
-    updateStore(store, {roverPhotos: null, date: date})
+    updateStore({roverPhotos: null, date: date})
 })
 
 // ------------------------------------------------------  COMPONENTS
 
 // Method to dynamically add tabs to DOM
 const navigation = () => {
-    let {rovers} = store
+    let {rovers} = getState()
 
     return rovers.map(name => {
         return `<li><a href="#${name}" class="rover-link">${name}</a></li>`
@@ -103,7 +123,7 @@ const navigation = () => {
 // Method to render rover manifest data
 const roverManifest = (roverManifestData, roverName) => {
     if (!roverManifestData) {
-        getRoverManifest(store, roverName)
+        getRoverManifest(getState(), roverName)
         return (`
         <div class="spinner">
             <div class="bounce1"></div>
@@ -127,7 +147,7 @@ const renderPhotos = (roverPhotos, roverName, pages, page, perPage) => {
     }
 
     if(!roverPhotos) {
-        getRoverPhotos(store, roverName)
+        getRoverPhotos(getState(), roverName)
         return (`
             <div class="spinner">
                 <div class="bounce1"></div>
@@ -140,9 +160,8 @@ const renderPhotos = (roverPhotos, roverName, pages, page, perPage) => {
     const offset = perPage * page
 
     const imageHTML = roverPhotos.map((photo, index) => {
-        console.log(index, offset, (offset + perPage))
+
         if((offset + perPage) <= index || index < offset){
-            console.log(index)
             return ''
         }
         return `<img src="${photo}" />`
@@ -210,7 +229,7 @@ window.addEventListener('click', (event) => {
 
     const page = parseInt(event.target.getAttribute('data-index'), 10)
 
-    updateStore(store, {page})
+    updateStore({page})
 })
 
 window.addEventListener('keydown', (event) => {
@@ -218,7 +237,7 @@ window.addEventListener('keydown', (event) => {
         return
     }
 
-    let {page, pages} = store
+    let {page, pages} = getState()
 
     let nextPage
 
@@ -234,7 +253,7 @@ window.addEventListener('keydown', (event) => {
         return
     }
 
-    updateStore(store, {page})
+    updateStore({page})
 })
 
 // Previous Button
@@ -243,7 +262,7 @@ window.addEventListener('click', (event) => {
         return
     }
 
-    let {page} = store
+    let {page} = getState()
 
     let previousPage = page - 1
 
@@ -253,7 +272,7 @@ window.addEventListener('click', (event) => {
         return
     }
 
-    updateStore(store, {page})
+    updateStore({page})
 })
 
 // Next Button
@@ -262,7 +281,7 @@ window.addEventListener('click', (event) => {
         return
     }
 
-    let {page} = store
+    let {page} = getState()
 
     let nextPage = page + 1
 
@@ -272,13 +291,13 @@ window.addEventListener('click', (event) => {
         return
     }
 
-    updateStore(store, {page})
+    updateStore({page})
 })
 
 // Load images
 function showImages(roverPhotos, roverName) {
     const gallery = document.getElementById('image-gallery')
-    let { perPage, page, pages } = store
+    let { perPage, page, pages } = getState()
 
     if(gallery){
         while(gallery.firstChild){
@@ -341,7 +360,7 @@ const getRoverManifest = (state, roverName) => {
 
     fetch(`http://localhost:3000/rovers/${roverName}`)
         .then(res => res.json())
-        .then(roverManifestData => updateStore(store, {roverManifestData}))
+        .then(roverManifestData => updateStore({roverManifestData}))
 
     return roverManifestData
 }
@@ -358,7 +377,7 @@ const getRoverPhotos = (state, roverName) => {
             const page = 0
             const pages = Math.ceil(roverPhotos.length / perPage)
 
-            return updateStore(store, {roverPhotos, page, pages})
+            return updateStore({roverPhotos, page, pages})
         })
 
     return roverPhotos
