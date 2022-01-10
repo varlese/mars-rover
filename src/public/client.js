@@ -52,7 +52,6 @@ const App = () => {
     const inputDate = dayjs(date).format('YYYY-MM-DD')
 
     return `
-        <header></header>
         <main>
             <h1>Welcome!</h1>
             <p>Please select a rover and date to view rover photos from that period.</p>
@@ -62,6 +61,11 @@ const App = () => {
                         ${navigation()}
                     </ul>
                 </nav>
+                <div class="hamburger">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
                 <div class="date-selector">
                     <input type="date" id="date" value="${inputDate}" />
                     <button id="change-date">Update</button>
@@ -74,7 +78,6 @@ const App = () => {
                 ${renderPhotos(roverPhotos, roverName, pages, page, perPage)}
             </section>
         </main>
-        <footer></footer>
     `
 }
 
@@ -164,7 +167,11 @@ const renderPhotos = (roverPhotos, roverName, pages, page, perPage) => {
         if((offset + perPage) <= index || index < offset){
             return ''
         }
-        return `<img src="${photo}" />`
+        return (`
+        <div class="gallery-item">
+                <img src="${photo}" />
+        </div>
+        `)
     }).join('')
 
     return (`
@@ -178,44 +185,10 @@ const renderPhotos = (roverPhotos, roverName, pages, page, perPage) => {
 }
 
 // Set up gallery pagination/navigation
-const renderDot = (page, currentPage, buttonClass) => {
-    const dotLabel = page + 1
-    let dotClasses = [buttonClass]
-
-    if(currentPage === page){
-        dotClasses.push('active')
-    }
-
-    dotClasses = dotClasses.join(' ')
-
-    const dotHTML = (`
-    <button class="${dotClasses}" data-index=${page}>
-        <span class="sr-only">
-            ${dotLabel}
-        </span>
-    </button>
-    `)
-
-    return dotHTML
-}
-
-const renderNavigation = (pages, page) => {
-    let dots = []
-    for (var i = 0; i < pages; i++){
-        dots.push(renderDot(i, page, 'gallery-dot'))
-    }
-
-    const dotsHTML = dots.join('')
-
+const renderNavigation = () => {
     return (`
         <footer id="gallery-pagination">
             <button class="btnPrevious">&larr; <span class="sr-only">Previous</span></button>
-            <div>
-                <div id="gallery-dots">
-                    ${dotsHTML}
-                </div>
-                <span id="page"></span>
-            </div>
             <button class="btnNext"><span class="sr-only">Next </span>&rarr;</button>
         </footer>
     `)
@@ -262,7 +235,7 @@ window.addEventListener('click', (event) => {
         return
     }
 
-    let {page} = getState()
+    let {page, pages} = getState()
 
     let previousPage = page - 1
 
@@ -281,7 +254,7 @@ window.addEventListener('click', (event) => {
         return
     }
 
-    let {page} = getState()
+    let {page, pages} = getState()
 
     let nextPage = page + 1
 
