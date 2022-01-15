@@ -16,5 +16,8 @@
     "express": "^4.17.1",
     "immutable": "^4.0.0",
     "node-fetch": "^2.6.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.6.0"
   }
 }
